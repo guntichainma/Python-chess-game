@@ -415,30 +415,6 @@ def draw_panel():
         (BOARD_SIZE + 30, 170),
     )
 
-    instructions = [
-        "Click a piece",
-        "Legal moves appear",
-        "Click a dot to move",
-        "",
-        "R = Restart game",
-    ]
-
-    y = 240
-
-    for line in instructions:
-
-        text = normal_font.render(
-            line,
-            True,
-            SECONDARY_TEXT,
-        )
-
-        screen.blit(
-            text,
-            (BOARD_SIZE + 30, y),
-        )
-
-        y += 35
 
     # -----------------------------------------------------
     # MOVE HISTORY
@@ -526,6 +502,16 @@ def handle_click(position):
     global last_move
 
     x, y = position
+
+        # Undo button
+    if UNDO_BUTTON.collidepoint(position):
+        undo_move()
+        return
+
+    # Restart button
+    if RESTART_BUTTON.collidepoint(position):
+        restart_game()
+        return
 
     if x >= BOARD_SIZE:
         return
@@ -619,6 +605,64 @@ def restart_game():
     legal_moves = []
     last_move = None
 
+def undo_move():
+
+    global selected_square
+    global legal_moves
+    global last_move
+
+    if len(board.move_stack) == 0:
+        return
+
+    board.pop()
+
+    selected_square = None
+    legal_moves = []
+
+    if len(board.move_stack) > 0:
+        last_move = board.peek()
+    else:
+        last_move = None
+
+def draw_button(rect, text):
+
+    mouse_pos = pygame.mouse.get_pos()
+
+    if rect.collidepoint(mouse_pos):
+        color = BUTTON_HOVER
+    else:
+        color = BUTTON_COLOR
+
+    pygame.draw.rect(
+        screen,
+        color,
+        rect,
+        border_radius=8,
+    )
+
+    label = small_font.render(
+        text,
+        True,
+        BUTTON_TEXT,
+    )
+
+    label_rect = label.get_rect(
+        center=rect.center
+    )
+
+    screen.blit(label, label_rect)
+
+def draw_buttons():
+
+    draw_button(
+        UNDO_BUTTON,
+        "Undo",
+    )
+
+    draw_button(
+        RESTART_BUTTON,
+        "Restart",
+    )
 
 # =========================================================
 # MAIN
@@ -641,15 +685,19 @@ def main():
                     handle_click(event.pos)
 
             elif event.type == pygame.KEYDOWN:
-
+                # R = Restart
                 if event.key == pygame.K_r:
                     restart_game()
+                # U = Undo
+                elif event.key == pygame.K_u:
+                    undo_move()
 
         draw_board()
         draw_highlights()
         draw_legal_moves()
         draw_pieces()
         draw_panel()
+        draw_buttons()
 
         pygame.display.flip()
 
